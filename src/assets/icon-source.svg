@@ -1,0 +1,7 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Blue shield background -->
+    <path d="M64 12L16 36v32c0 30.92 22.44 59.84 48 64 25.56-4.16 48-33.08 48-64V36L64 12z" fill="#3b82f6"/>
+    
+    <!-- White checkmark -->
+    <path d="M56 72l-12-12-5.64 5.64L56 83.32l32-32-5.64-5.64L56 72z" fill="white" stroke="white" stroke-width="2"/>
+</svg>

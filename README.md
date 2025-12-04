@@ -248,7 +248,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 👨‍💻 Author
 
 **Pawel Nowak** ([@nowakpwel](https://github.com/nowakpwel))
-- 🌍 Based in Wrocław, Poland
+- 🌍 Based in Szczecin, Poland
 - 💼 Java Developer | Privacy Advocate
 - 🔗 [LinkedIn](https://www.linkedin.com/in/nowakpwel)
 
@@ -283,7 +283,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - [ ] Custom whitelist/blacklist
 - [ ] Business tier
 
-### 🔜 v2.0.0 -  Cross-platform
+### 🔜 v2.0.0 - Cross-platform
 - [ ] Firefox extension
 - [ ] Safari extension
 - [ ] Edge extension

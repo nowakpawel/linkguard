@@ -7,17 +7,14 @@ console.log('LinkGuard content script loaded');
 let currentTooltip = null;
 let hoveredLink = null;
 let checkTimeout = null;
+let hideTimeout = null;
 
 /**
  * Initialize content script
  */
 function init() {
   console.log('LinkGuard: Initializing content script');
-  
-  // Set up link hover detection
   setupLinkDetection();
-  
-  // Listen for messages from background script
   chrome.runtime.onMessage.addListener(handleMessage);
 }
 
@@ -25,36 +22,32 @@ function init() {
  * Set up link hover detection
  */
 function setupLinkDetection() {
-  // Listen for mouseover on all links
   document.addEventListener('mouseover', handleMouseOver, true);
-  
-  // Listen for mouseout to hide tooltip
   document.addEventListener('mouseout', handleMouseOut, true);
-  
-  // Listen for scroll to reposition tooltip
   document.addEventListener('scroll', handleScroll, true);
 }
 
 /**
  * Handle mouse over event
- * @param {MouseEvent} event
  */
 function handleMouseOver(event) {
   const link = event.target.closest('a');
-  
+
   if (!link || !link.href) return;
-  
-  // Ignore if already checking this link
   if (hoveredLink === link) return;
-  
+
+  // Cancel any pending hide
+  if (hideTimeout) {
+    clearTimeout(hideTimeout);
+    hideTimeout = null;
+  }
+
   hoveredLink = link;
-  
-  // Clear any existing timeout
+
   if (checkTimeout) {
     clearTimeout(checkTimeout);
   }
-  
-  // Wait 300ms before showing tooltip (avoid flashing on quick hover)
+
   checkTimeout = setTimeout(() => {
     checkLink(link, event.clientX, event.clientY);
   }, 300);
@@ -62,28 +55,37 @@ function handleMouseOver(event) {
 
 /**
  * Handle mouse out event
- * @param {MouseEvent} event
+ * BUG FIX: Check relatedTarget to avoid hiding when mouse moves
+ * between child elements of the same link (e.g. <a><span>text</span></a>)
  */
 function handleMouseOut(event) {
   const link = event.target.closest('a');
-  
-  if (link === hoveredLink) {
-    hoveredLink = null;
-    
-    if (checkTimeout) {
-      clearTimeout(checkTimeout);
-      checkTimeout = null;
-    }
-    
-    hideTooltip();
+
+  if (!link || link !== hoveredLink) return;
+
+  // If mouse moved to a child element of the SAME link - ignore
+  const relatedTarget = event.relatedTarget;
+  if (relatedTarget && link.contains(relatedTarget)) return;
+
+  hoveredLink = null;
+
+  if (checkTimeout) {
+    clearTimeout(checkTimeout);
+    checkTimeout = null;
   }
+
+  // Small delay before hiding - prevents flicker when mouse briefly
+  // passes through link border
+  hideTimeout = setTimeout(() => {
+    hideTooltip();
+    hideTimeout = null;
+  }, 100);
 }
 
 /**
  * Handle scroll event
  */
 function handleScroll() {
-  // Hide tooltip when user scrolls
   if (currentTooltip) {
     hideTooltip();
   }
@@ -91,90 +93,65 @@ function handleScroll() {
 
 /**
  * Check a link's safety
- * @param {HTMLAnchorElement} link
- * @param {number} x - Mouse X position
- * @param {number} y - Mouse Y position
  */
 async function checkLink(link, x, y) {
   try {
     const url = link.href;
-    
     console.log('LinkGuard: Checking link:', url);
-    
-    // Show loading tooltip
+
     showTooltip({
       url: url,
       status: 'loading',
       message: 'Checking link safety...'
     }, x, y);
-    
-    // Send to background script for analysis
-    chrome.runtime.sendMessage({
-      action: 'checkLink',
-      url: url
-    }, (response) => {
-      // Check for errors
+
+    chrome.runtime.sendMessage({ action: 'checkLink', url: url }, (response) => {
       if (chrome.runtime.lastError) {
         console.error('LinkGuard: Runtime error:', chrome.runtime.lastError);
-        showTooltip({
-          url: url,
-          status: 'error',
-          message: 'Failed to check link'
-        }, x, y);
+        if (hoveredLink === link) {
+          showTooltip({ url, status: 'error', message: 'Failed to check link' }, x, y);
+        }
         return;
       }
-      
-      // Check if we got a response
+
       if (!response) {
-        console.error('LinkGuard: No response from background script');
-        showTooltip({
-          url: url,
-          status: 'error',
-          message: 'No response from analysis'
-        }, x, y);
+        if (hoveredLink === link) {
+          showTooltip({ url, status: 'error', message: 'No response from analysis' }, x, y);
+        }
         return;
       }
-      
-      console.log('LinkGuard: Received response:', response);
-      
-      // Update tooltip with results (only if still hovering same link)
+
+      // Only update if still hovering the same link
       if (hoveredLink === link) {
         showTooltip(response, x, y);
       }
     });
-    
-    // Notify popup about link check
+
     chrome.runtime.sendMessage({ action: 'linkChecked' });
-    
+
   } catch (error) {
     console.error('LinkGuard: Error in checkLink:', error);
-    showTooltip({
-      url: link.href,
-      status: 'error',
-      message: 'Error analyzing link'
-    }, x, y);
+    showTooltip({ url: link.href, status: 'error', message: 'Error analyzing link' }, x, y);
   }
 }
 
 /**
  * Show tooltip with link information
- * @param {Object} data - Link data
- * @param {number} x - Mouse X position
- * @param {number} y - Mouse Y position
  */
 function showTooltip(data, x, y) {
-  // Remove existing tooltip
   hideTooltip();
-  
-  // Create tooltip element
+
   const tooltip = document.createElement('div');
   tooltip.className = 'linkguard-tooltip';
   tooltip.id = 'linkguard-tooltip';
-  
-  // Determine status color
+
+  // BUG FIX: pointer-events none prevents tooltip from
+  // intercepting mouse events and blocking mouseout on the link
+  tooltip.style.pointerEvents = 'none';
+
   let statusClass = 'safe';
   let statusText = 'Safe';
-  
+
   if (data.status === 'loading') {
     statusClass = 'warning';
     statusText = 'Checking...';
@@ -191,8 +168,7 @@ function showTooltip(data, x, y) {
     statusClass = 'warning';
     statusText = 'Error';
   }
-  
-  // Build tooltip HTML
+
   tooltip.innerHTML = `
     <div class="linkguard-tooltip-header">
       <div class="linkguard-tooltip-status ${statusClass}"></div>
@@ -201,16 +177,14 @@ function showTooltip(data, x, y) {
     <div class="linkguard-tooltip-url">${truncateUrl(data.url, 50)}</div>
     <div class="linkguard-tooltip-info">${data.message || 'No issues detected'}</div>
   `;
-  
-  // Position tooltip
+
   tooltip.style.left = `${x + 15}px`;
   tooltip.style.top = `${y + 15}px`;
-  
-  // Add to page
+
   document.body.appendChild(tooltip);
   currentTooltip = tooltip;
-  
-  // Adjust position if off screen
+
+  // Adjust position if tooltip goes off screen
   const rect = tooltip.getBoundingClientRect();
   if (rect.right > window.innerWidth) {
     tooltip.style.left = `${x - rect.width - 15}px`;
@@ -232,9 +206,6 @@ function hideTooltip() {
 
 /**
  * Truncate URL for display
- * @param {string} url
- * @param {number} maxLength
- * @returns {string}
  */
 function truncateUrl(url, maxLength) {
   if (url.length <= maxLength) return url;
@@ -243,16 +214,10 @@ function truncateUrl(url, maxLength) {
 
 /**
  * Handle messages from background script
- * @param {Object} request
- * @param {Object} sender
- * @param {Function} sendResponse
  */
 function handleMessage(request, sender, sendResponse) {
-  if (request.action === 'updateTooltip') {
-    // Update tooltip if still hovering
-    if (currentTooltip) {
-      showTooltip(request.data, request.x, request.y);
-    }
+  if (request.action === 'updateTooltip' && currentTooltip) {
+    showTooltip(request.data, request.x, request.y);
   }
 }
 

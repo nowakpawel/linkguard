@@ -1,53 +1,57 @@
 LINKGUARD EXTENSION ICONS
 =========================
 
-The extension requires 3 icon sizes:
-- icon16.png (16x16) - Toolbar icon
-- icon48.png (48x48) - Extension management
-- icon128.png (128x128) - Chrome Web Store
+✅ PROFESSIONAL ICONS INSTALLED!
+---------------------------------
 
-TEMPORARY SOLUTION:
-------------------
-For now, the extension will work without icons (Chrome will show a default placeholder).
+All icons now use the LinkGuard shield design:
+- Blue shield (#3b82f6)
+- White checkmark
+- Professional and recognizable
 
-TO CREATE ICONS:
-----------------
+FILES:
+------
+- icon16.png (16x16)   - Browser toolbar icon
+- icon48.png (48x48)   - Extensions management page
+- icon128.png (128x128) - Chrome Web Store listing
+- icon-source.svg      - Source SVG for regeneration
 
-Option 1: Use your existing SVG assets
-- You have favicon.svg in linkguard-helpers/assets/
-- Convert it to PNG at different sizes
-- Place in src/assets/
+DESIGN DETAILS:
+--------------
+Colors:
+  - Shield: #3b82f6 (blue)
+  - Checkmark: #FFFFFF (white)
 
-Option 2: Online tool
-- Go to: https://www.favicon-generator.org/
-- Upload an image
-- Download all sizes
-- Rename to icon16.png, icon48.png, icon128.png
+Format:
+  - PNG with transparency (RGBA)
+  - Clean, sharp edges
+  - Optimized file sizes
 
-Option 3: Design custom icons
-- Use Figma, Canva, or any design tool
-- Create a shield/lock symbol with "LG" text
-- Export at required sizes
-- Save as PNG
+READY FOR CHROME WEB STORE:
+---------------------------
+✅ All sizes meet requirements
+✅ Square dimensions
+✅ PNG format
+✅ Transparent background
+✅ High quality
+✅ Consistent design
 
-ICON GUIDELINES:
----------------
-- Simple, recognizable design
-- Works well at small sizes (16x16)
-- Matches LinkGuard branding
-- Blue/green color scheme (security/trust)
-- Transparent background recommended
+REGENERATING ICONS (if needed):
+-------------------------------
+If you need to recreate from source SVG:
 
-Once you have the icons:
-1. Save them in: src/assets/
-2. They'll automatically load (already configured in manifest.json)
+python3 << 'SCRIPT'
+import cairosvg
+cairosvg.svg2png(url='icon-source.svg', write_to='icon16.png', output_width=16, output_height=16)
+cairosvg.svg2png(url='icon-source.svg', write_to='icon48.png', output_width=48, output_height=48)
+cairosvg.svg2png(url='icon-source.svg', write_to='icon128.png', output_width=128, output_height=128)
+SCRIPT
 
-For MVP launch, you can:
-- Use simple colored squares as placeholders
-- Design proper icons later
-- Chrome Web Store doesn't require custom icons to test
+BACKUP:
+-------
+Old placeholder icons saved as:
+- icon16-old.png
+- icon48-old.png
+- icon128-old.png
 
-PRIORITY:
----------
-Icons are LOW priority for initial development.
-Focus on functionality first, polish later.
+These can be deleted if you're happy with the new icons.

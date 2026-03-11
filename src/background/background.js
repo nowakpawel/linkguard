@@ -35,7 +35,8 @@ const SQUATTABLE_DOMAINS = [
 // URL shorteners
 const SHORTENERS = new Set([
   'bit.ly', 't.co', 'tinyurl.com', 'goo.gl', 'ow.ly', 'short.link',
-  'rb.gy', 'cutt.ly', 'is.gd', 'buff.ly',
+  'rb.gy', 'cutt.ly', 'is.gd', 'buff.ly', 'tiny.pl', 'tiny.cc',
+  'shorturl.at', 'clck.ru', 'qps.ru', 'youtu.be', 'lnkd.in',
 ]);
 
 // Phishing keywords - only suspicious on NON-known domains
@@ -86,6 +87,54 @@ function handleMessage(request, sender, sendResponse) {
 }
 
 /**
+ * Try to expand a shortened URL by following redirects.
+ * Returns the final URL, or null if expansion fails.
+ *
+ * How it works:
+ *   fetch() with redirect:'follow' automatically follows 301/302 chains.
+ *   response.url is where we finally landed.
+ *   We use HEAD first (no body download) — fast and polite.
+ *   If server blocks HEAD, fall back to GET with range limit.
+ *
+ * @param {string} url
+ * @returns {Promise<string|null>}
+ */
+async function expandUrl(url) {
+  try {
+    // Try HEAD first — lightweight, no body
+    const headResponse = await fetch(url, {
+      method: 'HEAD',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(5000), // 5s max
+    });
+
+    // response.url = final destination after all redirects
+    if (headResponse.url && headResponse.url !== url) {
+      return headResponse.url;
+    }
+
+    // Some servers block HEAD — try GET but limit what we download
+    const getResponse = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(5000),
+      headers: { 'Range': 'bytes=0-0' }, // Download only first byte
+    });
+
+    if (getResponse.url && getResponse.url !== url) {
+      return getResponse.url;
+    }
+
+    return null;
+
+  } catch (error) {
+    // Timeout, network error, CORS, etc. — not critical, just skip expansion
+    console.log(`LinkGuard: Could not expand ${url}: ${error.message}`);
+    return null;
+  }
+}
+
+/**
  * Check link safety - main entry point
  */
 async function checkLinkSafety(url) {
@@ -99,15 +148,47 @@ async function checkLinkSafety(url) {
       return cached;
     }
 
-    const analysis = analyzeUrl(url);
+    // Step 1: Check if this is a shortened URL
+    let expandedUrl = null;
+    let urlToAnalyze = url;
+
+    try {
+      const urlObj = new URL(url);
+      if (SHORTENERS.has(urlObj.hostname)) {
+        console.log(`LinkGuard: Shortener detected, expanding: ${url}`);
+        expandedUrl = await expandUrl(url);
+        if (expandedUrl) {
+          console.log(`LinkGuard: Expanded to: ${expandedUrl}`);
+          urlToAnalyze = expandedUrl;
+        }
+      }
+    } catch (_) {}
+
+    // Step 2: Analyze the REAL url (expanded if available, original otherwise)
+    const analysis = analyzeUrl(urlToAnalyze);
+
+    // Also flag the original URL as a shortener (add to findings)
+    if (expandedUrl) {
+      analysis.findings.unshift({
+        severity: 'low',
+        message: `Shortened URL — expands to: ${truncateForMessage(expandedUrl)}`
+      });
+      // Recalculate message with the new finding prepended
+      analysis.message = buildMessage(analysis.findings, analysis.details.trusted || false);
+    }
 
     // Map threat level to status
     let status = 'safe';
     if (analysis.threatLevel === 'danger') status = 'danger';
     else if (analysis.threatLevel === 'warning') status = 'warning';
+    // If expanded URL itself is dangerous, make sure status reflects that
+    if (expandedUrl && analysis.threatLevel !== 'safe') {
+      status = analysis.threatLevel;
+    }
 
     const result = {
-      url,
+      url,                    // original (shortened) URL
+      expandedUrl,            // real destination, or null
       status,
       message: analysis.message,
       details: analysis.details,
@@ -121,8 +202,15 @@ async function checkLinkSafety(url) {
 
   } catch (error) {
     console.error('LinkGuard: Error in checkLinkSafety:', error);
-    return { url, status: 'error', message: 'Failed to analyze link', checkedAt: Date.now() };
+    return { url, expandedUrl: null, status: 'error', message: 'Failed to analyze link', checkedAt: Date.now() };
   }
+}
+
+/**
+ * Truncate URL for display in messages
+ */
+function truncateForMessage(url, max = 60) {
+  return url.length > max ? url.substring(0, max) + '...' : url;
 }
 
 /**

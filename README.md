@@ -21,9 +21,9 @@ All analysis happens **before you click** - giving you the information you need 
 
 ## 🚀 Installation
 
-**Chrome Web Store:** *Coming soon!* (Chrome Web Store submission in progress)
+**[Install from Chrome Web Store](https://chromewebstore.google.com/detail/linkguard/finkjipnmbafphpgjkdfpceknefhefhi)**
 
-For now, see [Development Setup](#-development-setup) to run from source.
+Or see [Development Setup](#-development-setup) to run from source.
 
 ---
 
@@ -36,6 +36,7 @@ For now, see [Development Setup](#-development-setup) to run from source.
 - ✅ Real-time safety analysis
 - ✅ Pattern-based threat detection (suspicious TLDs, phishing keywords, IP addresses)
 - ✅ HTTPS vs HTTP checking
+- ✅ URL expansion for shortened links (bit.ly, tinyurl, etc.)
 - ✅ Beautiful tooltip interface
 - ✅ Statistics tracking
 - ✅ Smart caching (sub-100ms for repeated checks)
@@ -44,7 +45,6 @@ For now, see [Development Setup](#-development-setup) to run from source.
 ### Coming Soon
 
 - 🔜 Google Safe Browsing API integration
-- 🔜 URL expansion for shortened links (bit.ly, tinyurl, etc.)
 - 🔜 Multi-API verification (VirusTotal, PhishTank)
 - 🔜 Domain age checking
 - 🔜 SSL certificate validation
@@ -248,7 +248,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 👨‍💻 Author
 
 **Pawel Nowak** ([@nowakpwel](https://github.com/nowakpwel))
-- 🌍 Based in Szczecin, Poland
+- 🌍 Based in Wrocław, Poland
 - 💼 Java Developer | Privacy Advocate
 - 🔗 [LinkedIn](https://www.linkedin.com/in/nowakpwel)
 
@@ -256,26 +256,20 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📊 Roadmap
 
-### ✅ v0.1.0 (Current - MVP Complete!)
+### ✅ v0.1.0 (Current - Live on Chrome Web Store!)
 - ✅ Hover detection working
 - ✅ Real-time analysis
 - ✅ Tooltip interface
 - ✅ Pattern-based threat detection
+- ✅ URL expansion for shortened links
 - ✅ Statistics tracking
 - ✅ Sub-100ms response time
+- ✅ Published to Chrome Web Store
 
 ### 🔜 v0.2.0
 - [ ] Google Safe Browsing API integration
-- [ ] URL expansion for shortened links
 - [ ] Improved threat detection accuracy
 - [ ] Settings page with preferences
-
-### 🔜 v0.3.0 - Chrome Web Store Launch
-- [ ] Complete UI polish
-- [ ] Performance optimization
-- [ ] Beta testing with 50+ users
-- [ ] Chrome Web Store submission
-- [ ] First public release!
 
 ### 🔜 v1.0.0 - Premium Features
 - [ ] Multi-API verification (VirusTotal, PhishTank)
@@ -296,4 +290,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-*Last updated: December 4, 2024*
+*Last updated: March 2026*

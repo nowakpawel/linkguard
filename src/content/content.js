@@ -10,10 +10,49 @@ let checkTimeout = null;
 let hideTimeout = null;
 
 /**
+ * Inject CSS for the expanded URL row.
+ * Done in JS so the style travels with this single file.
+ */
+function injectExpandedStyles() {
+  if (document.getElementById('linkguard-expanded-style')) return;
+  const style = document.createElement('style');
+  style.id = 'linkguard-expanded-style';
+  style.textContent = `
+    .linkguard-tooltip-expanded {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 2px !important;
+      margin: 4px 0 6px !important;
+      padding: 6px 8px !important;
+      background: #eff6ff !important;
+      border-radius: 4px !important;
+      border-left: 3px solid #3b82f6 !important;
+    }
+    .linkguard-tooltip-expanded-label {
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.05em !important;
+      text-transform: uppercase !important;
+      color: #2563eb !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    }
+    .linkguard-tooltip-expanded-url {
+      font-size: 11px !important;
+      color: #1e40af !important;
+      word-break: break-all !important;
+      line-height: 1.4 !important;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/**
  * Initialize content script
  */
 function init() {
   console.log('LinkGuard: Initializing content script');
+  injectExpandedStyles();
   setupLinkDetection();
   chrome.runtime.onMessage.addListener(handleMessage);
 }
@@ -145,8 +184,7 @@ function showTooltip(data, x, y) {
   tooltip.className = 'linkguard-tooltip';
   tooltip.id = 'linkguard-tooltip';
 
-  // BUG FIX: pointer-events none prevents tooltip from
-  // intercepting mouse events and blocking mouseout on the link
+  // Tooltip must not intercept mouse events — would block mouseout on the link
   tooltip.style.pointerEvents = 'none';
 
   let statusClass = 'safe';
@@ -169,12 +207,21 @@ function showTooltip(data, x, y) {
     statusText = 'Error';
   }
 
+  // Build expanded URL row (only for shortened links where we resolved the real URL)
+  const expandedRow = data.expandedUrl
+    ? `<div class="linkguard-tooltip-expanded">
+         <span class="linkguard-tooltip-expanded-label">↪ Real destination</span>
+         <span class="linkguard-tooltip-expanded-url">${truncateUrl(data.expandedUrl, 55)}</span>
+       </div>`
+    : '';
+
   tooltip.innerHTML = `
     <div class="linkguard-tooltip-header">
       <div class="linkguard-tooltip-status ${statusClass}"></div>
       <span class="linkguard-tooltip-title">${statusText}</span>
     </div>
     <div class="linkguard-tooltip-url">${truncateUrl(data.url, 50)}</div>
+    ${expandedRow}
     <div class="linkguard-tooltip-info">${data.message || 'No issues detected'}</div>
   `;
 

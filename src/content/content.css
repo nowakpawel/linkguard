@@ -109,3 +109,31 @@
     transform: rotate(360deg);
   }
 }
+
+/* Expanded URL section (shown when hovering shortened links) */
+.linkguard-tooltip-expanded {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  margin: 4px 0 6px !important;
+  padding: 6px 8px !important;
+  background: #eff6ff !important;
+  border-radius: 4px !important;
+  border-left: 3px solid #3b82f6 !important;
+}
+
+.linkguard-tooltip-expanded-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  color: #2563eb !important;
+}
+
+.linkguard-tooltip-expanded-url {
+  font-size: 11px !important;
+  color: #1e40af !important;
+  word-break: break-all !important;
+  line-height: 1.4 !important;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace !important;
+}
